@@ -1,0 +1,6 @@
+Revision history for Perl extension Pg::Parser.
+
+0.01  Tue Jan  3 21:42:10 2012
+	- original version; created by h2xs 1.23 with options
+		-A -f -n Pg::Parser
+
