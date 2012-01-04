@@ -10,8 +10,7 @@
 #include "node_types.h"
 #include "lexer.h"
 
-typedef Node *Pg__Parser__Pg__Node;
-typedef SelectStmt *Pg__Parser__Pg__SelectStmt;
+#include "parser_nodes.h"
 
 static void init() {
     MemoryContextInit();
@@ -52,8 +51,6 @@ static SV *parse(const char *src) {
     return newRV(parsed_statements);
 }
 
-MODULE = Pg::Parser     PACKAGE = Pg::Parser::Pg::SelectStmt
-
 MODULE = Pg::Parser     PACKAGE = Pg::Parser::Lexer
 
 Pg::Parser::Lexer
@@ -79,15 +76,7 @@ DESTROY(self)
     CODE:
         destroy_lexer(self);
 
-MODULE = Pg::Parser     PACKAGE = Pg::Parser::Pg::Node
-
-const char *
-type(self)
-    Pg::Parser::Pg::Node self;
-    CODE:
-        RETVAL = NodeTypes[nodeTag(self)];
-    OUTPUT:
-        RETVAL
+INCLUDE: ParserNodes.xsh
         
 MODULE = Pg::Parser     PACKAGE = Pg::Parser
 

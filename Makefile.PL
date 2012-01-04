@@ -3,6 +3,8 @@ use App::Info::RDBMS::PostgreSQL;
 use App::Info::Handler::Prompt;
 use ExtUtils::MakeMaker;
 
+use inc::Pg::Parser::ParseNodesGenerator;
+
 # This part nicked from DBD::Pg Makefile.PL (c) Turnstep
 
 my $POSTGRES_INCLUDE;
@@ -125,6 +127,8 @@ static const char *TokenTypes[] = {
     print $out join "\n", map { "#define $_->[0] $_->[1]" } grep { defined } @token_types;
     close $out;
 }
+
+Pg::Parser::ParseNodesGenerator->generate($POSTGRES_SRC);
 
 # See lib/ExtUtils/MakeMaker.pm for details of how to influence
 # the contents of the Makefile that is written.

@@ -1,5 +1,0 @@
-TYPEMAP
-
-Pg::Parser::Lexer               T_PTROBJ
-Pg::Parser::Pg::Node            T_PTROBJ
-Pg::Parser::Pg::SelectStmt      T_PTROBJ
