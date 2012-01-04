@@ -30,7 +30,8 @@ our $VERSION = '0.01';
 require XSLoader;
 XSLoader::load('Pg::Parser', $VERSION);
 
-# Preloaded methods go here.
+# Setup node types
+@Pg::Parser::Pg::SelectStmt::ISA = qw(Pg::Parser::Pg::Node);
 
 1;
 __END__
