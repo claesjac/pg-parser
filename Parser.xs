@@ -7,10 +7,9 @@
 #include <postgres.h>
 #include <parser/parser.h>
 
+#include "parser_nodes.h"
 #include "node_types.h"
 #include "lexer.h"
-
-#include "parser_nodes.h"
 
 static void init() {
     MemoryContextInit();
@@ -48,7 +47,26 @@ static SV *parse(const char *src) {
         av_push(parsed_statements, parse_node_to_sv(parsetree));
     }
     
-    return newRV(parsed_statements);
+    return newRV((SV *) parsed_statements);
+}
+
+static SV *pg_list_to_av(List *list) {
+    AV          *perl_list;
+    ListCell    *item;
+    
+    if (list == NULL) {
+        return &PL_sv_undef;
+    }
+
+    perl_list = newAV();
+    
+	foreach(item, list) {
+        Node *node = (Node *) lfirst(item);
+        
+        av_push(perl_list, parse_node_to_sv(node));
+    }
+    
+    return newRV((SV *) perl_list);    
 }
 
 MODULE = Pg::Parser     PACKAGE = Pg::Parser::Lexer

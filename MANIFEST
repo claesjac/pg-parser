@@ -1,8 +1,15 @@
 Changes
+inc/Pg/Parser/ParseNodesGenerator.pm
+lexer.c
+lexer.h
+lib/Pg/Parser.pm
 Makefile.PL
 MANIFEST
+MYMETA.json
+MYMETA.yml
 Parser.xs
 ppport.h
 README
 t/01-init.t
-lib/Pg/Parser.pm
+t/02-lexer.t
+t/03-parser.t

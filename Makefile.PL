@@ -65,10 +65,17 @@ does_path_exist('POSTGRES_INCLUDE',  $POSTGRES_INCLUDE);
 does_path_exist('POSTGRES_BIN',  $POSTGRES_BIN);
 does_path_exist('POSTGRES_SRC', $POSTGRES_SRC);
 
+# Remove previous typemap if it exists
+unlink "typemap";
+open my $typemap, ">", "typemap" or die "Can't open typemap because of: $!";
+print $typemap "TYPEMAP\n\n";
+printf $typemap "%-50s T_PTROBJ\n", "Pg::Parser::Lexer";
+close $typemap;
+
 # Generate node type names
 {
     open my $in, "<", "$POSTGRES_SRC/src/include/nodes/nodes.h" or die "Can't open nodes.h in Postgres includes because of: $!";
-    my $last_val = 0;
+    my $last_val = -1;
     my @node_types;
     while (<$in>) {
         chomp;
