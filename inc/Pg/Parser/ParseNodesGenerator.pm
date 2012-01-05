@@ -46,7 +46,6 @@ sub generate {
             
             if ($current_type && /^\s*(\w+)\s*(\*)?\s*(\w+)\s*;/) {
                 my ($type, $name, $ptr) = ($1, $3, $2);
-                $name =~ s/([a-z])([A-Z])/lc(${1}) . "_" . lc($2)/ge;
                 $types{$current_type}->{$name} = [$type, defined $ptr ? 1 : 0];
             }
             elsif ($current_enum && /^\s*(\w+)(?:\s*=\s*(\d+))?/) {
@@ -123,6 +122,8 @@ val_ival(self)
             my $output = kind_to_output($kind, \%types, \%enums);
             next unless $output;
             my $name = $member;
+
+            $name =~ s/([a-z])([A-Z])/lc(${1}) . "_" . lc($2)/ge;
 
             if ($kind->[0] eq "Expr" && !$kind->[1] && $member eq "xpr") {
                 $output = "const char *";

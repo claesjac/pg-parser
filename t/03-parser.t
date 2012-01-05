@@ -12,11 +12,11 @@ my $node = shift @$parse_trees;
 isa_ok($node, "Pg::Parser::Pg::SelectStmt");
 is($node->type, "SelectStmt");
 
-my $from = $node->fromClause;
+my $from = $node->from_clause;
 is (scalar @$from, 1);
 isa_ok($from->[0], "Pg::Parser::Pg::RangeVar");
 is ($from->[0]->relname, "foo");
 
-my $cols = $node->targetList;
+my $cols = $node->target_list;
 is (scalar @$cols, 2);
 isa_ok($cols->[0], "Pg::Parser::Pg::ResTarget");
