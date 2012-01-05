@@ -45,7 +45,9 @@ sub generate {
             }
             
             if ($current_type && /^\s*(\w+)\s*(\*)?\s*(\w+)\s*;/) {
-                $types{$current_type}->{$3} = [$1, defined $2 ? 1 : 0];
+                my ($type, $name, $ptr) = ($1, $3, $2);
+                $name =~ s/([a-z])([A-Z])/lc(${1}) . "_" . lc($2)/ge;
+                $types{$current_type}->{$name} = [$type, defined $ptr ? 1 : 0];
             }
             elsif ($current_enum && /^\s*(\w+)(?:\s*=\s*(\d+))?/) {
                 $last_enum_val = defined $2 ? $2 : $last_enum_val + 1;
