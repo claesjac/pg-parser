@@ -64,8 +64,8 @@ sub generate {
     }
     close $typemap;
     
-    open my $type_out, ">", "parser_nodes.h" or die "Can't open parser_nodes.h";
-    open my $out, ">", "ParserNodes.xsh" or die "Can't open ParserNodes.xs: $!";
+    open my $type_out, ">", "pg_parser_nodes.h" or die "Can't open parser_nodes.h";
+    open my $out, ">", "PgParserNodes.xsh" or die "Can't open ParserNodes.xs: $!";
  
     print $out q/
 MODULE = Pg::Parser    PACKAGE = Pg::Parser::Pg::Value
@@ -152,7 +152,7 @@ $name(self)
         print $out qq{        RETVAL = NodeTypes[nodeTag(v)];};
     }
     elsif ($kind->[0] eq "List") {
-        print $out qq{        RETVAL = pg_list_to_av(v->$member);}
+        print $out qq{        RETVAL = pg_parse_list_to_av(v->$member);}
     }
     else {
         print $out "        RETVAL = $opt_getaddr(v->$member);";

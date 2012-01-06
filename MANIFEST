@@ -1,7 +1,9 @@
 Changes
 inc/Pg/Parser/ParseNodesGenerator.pm
-lexer.c
-lexer.h
+pg_parser.c
+pg_parser.h
+pg_lexer.c
+pg_lexer.h
 lib/Pg/Parser.pm
 Makefile.PL
 MANIFEST

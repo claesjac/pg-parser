@@ -90,7 +90,7 @@ close $typemap;
     }
     close $in;
 
-    open my $out, ">", "node_types.h" or die "Can't open node_types.h because of: $!";
+    open my $out, ">", "pg_node_types.h" or die "Can't open node_types.h because of: $!";
     print $out q/
 static const char *NodeTypes[] = {
 /;
@@ -120,7 +120,7 @@ static const char *NodeTypes[] = {
     }
     close $in;
     
-    open my $out, ">", "token_types.h" or die "Can't open token_types.h because of: $!";
+    open my $out, ">", "pg_token_types.h" or die "Can't open token_types.h because of: $!";
     print $out q/
 static const char *TokenTypes[] = {
 /;

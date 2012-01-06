@@ -4,7 +4,7 @@
 #include <parser/scanner.h>
 #include <parser/gramparse.h>
 
-#include "token_types.h"
+#include "pg_token_types.h"
 
 struct Pg_Parser_Lexer {
     core_yyscan_t       yyscanner;
