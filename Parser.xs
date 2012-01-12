@@ -6,16 +6,17 @@
 
 #include <postgres.h>
 #include <parser/parser.h>
-
 #include "pg_parser_nodes.h"
 #include "pg_node_types.h"
 
 #include "pg_parser.h"
 #include "pg_lexer.h"
 
-static void init() {
-    MemoryContextInit();
-}
+#include "plpgsql_parser.h"
+
+/* implemented in postgres_embed.c */
+extern void InitEmbeddedPostgres(void);
+extern void CloseEmbeddedPostgres(void);
 
 MODULE = Pg::Parser     PACKAGE = Pg::Parser::Lexer
 
@@ -54,7 +55,23 @@ parse(pkg,src)
         RETVAL = pg_parse(src);
     OUTPUT:
         RETVAL
-        
+    
+void
+close_postgres() 
+    CODE:
+        CloseEmbeddedPostgres();
+
+MODULE = Pg::Parser     PACKAGE = Pg::Parser::PLpgSQL
+
+SV *
+parse(pkg,src)
+    const char *pkg;
+    const char *src;
+    CODE:
+        RETVAL = plpgsql_parse(src);
+    OUTPUT:
+        RETVAL
+
 BOOT:
-    init();    
+    InitEmbeddedPostgres();    
     

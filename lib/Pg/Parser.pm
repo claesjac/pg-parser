@@ -30,6 +30,10 @@ our $VERSION = '0.01';
 require XSLoader;
 XSLoader::load('Pg::Parser', $VERSION);
 
+END {
+    Pg::Parser::close_postgres();
+}
+
 1;
 __END__
 # Below is stub documentation for your module. You'd better edit it!

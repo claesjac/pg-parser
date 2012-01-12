@@ -146,9 +146,9 @@ WriteMakefile(
     ($] >= 5.005 ?     ## Add these new keywords supported since 5.005
       (ABSTRACT_FROM  => 'lib/Pg/Parser.pm', # retrieve abstract from module
        AUTHOR         => 'Claes Jakobsson <claes@local>') : ()),
-    LIBS              => ["-L$POSTGRES_LIB -lpostgres"], # e.g., '-lm'
+    LIBS              => ["-L$POSTGRES_LIB -lpostgres -lplpgsql"], # e.g., '-lm'
     DEFINE            => '', # e.g., '-DHAVE_SOMETHING'
-    INC               => "-I$POSTGRES_SRC/src/include -I$POSTGRES_INCLUDE -I.", # e.g., '-I. -I/usr/include/other'
+    INC               => "-I$POSTGRES_SRC/src/include -I$POSTGRES_SRC/src/pl/plpgsql/src -I$POSTGRES_INCLUDE -I.", # e.g., '-I. -I/usr/include/other'
 	# Un-comment this if you add C files to link with later:
     OBJECT            => '$(O_FILES)', # link all the C files too
 );
