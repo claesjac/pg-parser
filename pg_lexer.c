@@ -40,13 +40,22 @@ static void str_token(core_YYSTYPE *yylval, size_t *len) {
 }
 
 MAKE_FIXED_TOKEN_FUNC(typecast_token, 2)
+MAKE_FIXED_TOKEN_FUNC(int_p_token, 3)
 MAKE_FIXED_TOKEN_FUNC(char_p_token, 4)
+MAKE_FIXED_TOKEN_FUNC(op_token, 1)
+MAKE_FIXED_TOKEN_FUNC(timestamp_token, 9)
+MAKE_FIXED_TOKEN_FUNC(with_token, 4)
 
 void init_lexer(void) {
     int i = 0;
     for (i = 0; i < NUM_TOKENS; i++) {
         convert_token[i] = NULL;
     }
+    
+    convert_token[OPEN_PAREN] =
+    convert_token[CLOSE_PAREN] =
+    convert_token[COMMA] =
+    op_token;
     
     convert_token[ICONST] = convert_token[PARAM] = ival_token;
 
@@ -58,8 +67,11 @@ void init_lexer(void) {
     convert_token[INTEGER] = 
     str_token;
     
+    convert_token[TIMESTAMP] = timestamp_token;
+    convert_token[WITH] = with_token;
     convert_token[TYPECAST] = typecast_token;
     convert_token[CHAR_P] = char_p_token;
+    convert_token[INT_P] = int_p_token;
 }
 
 Pg_Parser_Lexer *create_lexer(const char *src) {
@@ -94,6 +106,7 @@ Pg_Parser_Lexer_Token *next_lexer_token(Pg_Parser_Lexer *lexer) {
         if (TokenTypes[t] != NULL) {
             buff[0] = '\0';
             converter = convert_token[t];
+            
             if (converter) {
                 converter(&yylval, &len);
             }
@@ -103,12 +116,13 @@ Pg_Parser_Lexer_Token *next_lexer_token(Pg_Parser_Lexer *lexer) {
                 buff[len] = '\0';
             }
             
-            lexer->prev_end_yylloc = yylloc + len;        
-            
-            token = (Pg_Parser_Lexer_Token *) calloc(1, sizeof(Pg_Parser_Lexer_Token));
-            token->type = t;    
-            token->src = strdup(buff);
         }
+
+        lexer->prev_end_yylloc = yylloc + len;        
+
+        token = (Pg_Parser_Lexer_Token *) calloc(1, sizeof(Pg_Parser_Lexer_Token));
+        token->type = t;    
+        token->src = strdup(buff);
     }
     
     return token;

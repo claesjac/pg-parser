@@ -9,6 +9,7 @@ use strict;
 use warnings;
 
 use Data::Dumper qw(Dumper);
+use Text::CSV_XS;
 
 use Test::More qw(no_plan);
 BEGIN { use_ok('Pg::Parser') };
@@ -20,13 +21,15 @@ BEGIN { use_ok('Pg::Parser') };
 
 my @tests;
 
+my $csv = Text::CSV_XS->new({ allow_whitespace => 1});
+
 while (<DATA>) {
     chomp;
     my $sql = $_;
-    my @types = map uc, split/\s*,\s*/, do { $_ = <DATA>; chomp; $_ };
-    my @values = split/\s*,\s*/, do { $_ = <DATA>; chomp; $_ };
+    my @types = map uc, split/\s*,\s*/, do { $_ = <DATA>; chomp; $_ };    
+    $csv->parse(scalar <DATA>) or BAIL_OUT "CSV parsing failed because of " . $csv->error_diag;
     
-    push @tests, [ $sql, \@types, \@values ];
+    push @tests, [ $sql, \@types, [$csv->fields] ];
     
     # Expect separator
     my $sep = <DATA>;
@@ -38,11 +41,11 @@ for my $test (@tests) {
     my $lexer = Pg::Parser::Lexer->lex($test->[0]);
     
     while (my $token = $lexer->next_token) {
-        my $type = shift @{$test->[1]};
-        my $src = shift @{$test->[2]};
-        
-        is ($token->type, $type);
-        is ($token->src, $src);            
+        my $expect_type = shift @{$test->[1]};
+        my $expect_src = shift @{$test->[2]};
+                
+        is ($token->type, $expect_type);
+        is ($token->src, $expect_src);            
     }
 }
 
@@ -50,4 +53,8 @@ __DATA__
 SELECT 1
 SELECT, ICONST
 SELECT, 1
+---
+Create Table Foo ( id INT, bar TimeStamp WITh TZ )
+CREATE, TABLE, IDENT, OPEN_PAREN, IDENT, INT_P, COMMA, IDENT, TIMESTAMP, WITH, IDENT, CLOSE_PAREN
+Create, Table, Foo, (, id, INT, ",", bar, TimeStamp, WITh, TZ, )
 ---

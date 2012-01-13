@@ -124,6 +124,10 @@ static const char *NodeTypes[] = {
     }
     close $in;
     
+    $token_types[40] = ["OPEN_PAREN", 40];
+    $token_types[41] = ["CLOSE_PAREN", 41];
+    $token_types[44] = ["COMMA", 44];
+    
     open my $out, ">", "pg_token_types.h" or die "Can't open token_types.h because of: $!";
     print $out q/
 static const char *TokenTypes[] = {
