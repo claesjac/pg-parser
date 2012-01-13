@@ -11,6 +11,7 @@
 struct Pg_Parser_Lexer_Token {
     int     type;
     char    *src;
+    size_t  offset;
 };
     
 typedef struct Pg_Parser_Lexer_Token Pg_Parser_Lexer_Token;
@@ -142,6 +143,7 @@ Pg_Parser_Lexer_Token *next_lexer_token(Pg_Parser_Lexer *lexer) {
         token = (Pg_Parser_Lexer_Token *) calloc(1, sizeof(Pg_Parser_Lexer_Token));
         token->type = t;    
         token->src = strdup(buff);
+        token->offset = yylloc;
         
         /* Check if we should inject a whitespace and if so
            postpone the last token until next call */
@@ -150,7 +152,8 @@ Pg_Parser_Lexer_Token *next_lexer_token(Pg_Parser_Lexer *lexer) {
                 lexer->prev_token = token;
             
                 token = (Pg_Parser_Lexer_Token *) calloc(1, sizeof(Pg_Parser_Lexer_Token));
-                token->type = WHITESPACE;    
+                token->type = WHITESPACE;
+                token->offset = lexer->prev_end_yylloc;
                 token->src = strndup(lexer->src + lexer->prev_end_yylloc, yylloc - lexer->prev_end_yylloc);
             }
         }
@@ -167,6 +170,10 @@ const char *token_type(Pg_Parser_Lexer_Token *token) {
 
 const char *token_src(Pg_Parser_Lexer_Token *token) {
     return token->src;
+}
+
+size_t token_offset(Pg_Parser_Lexer_Token *token) {
+    return token->offset;
 }
 
 void destroy_token(Pg_Parser_Lexer_Token *token) {

@@ -35,13 +35,20 @@ while (my $opts = <DATA>) {
     
     my @types = map uc, split/\s*,\s*/, $types;
     $csv->parse(scalar <DATA>) or BAIL_OUT "CSV parsing failed because of " . $csv->error_diag;
-    
-    push @tests, [ $sql, \@types, [$csv->fields], \%opts ];
-    
+        
     # Expect separator
-    my $sep = <DATA>;
-    chomp $sep;
+    my $next = <DATA>;
+    chomp $next;
+
+    my $sep = $next;
+    my @pos;
+    if ($next =~ /^\d+(?:\s*,\s*\d+)*$/) {
+        @pos = split /\s*,\s*/, $next;
+        $sep = <DATA>;
+    }
     BAIL_OUT "Expected separator --- but got $sep" unless $sep eq "---";
+    
+    push @tests, [ $sql, \@types, [$csv->fields], \%opts, \@pos ];    
 }
 
 for my $test (@tests) {
@@ -49,12 +56,22 @@ for my $test (@tests) {
 
     diag "Lexing q{$test->[0]}";
     
+    my @types = @{$test->[1]};
+    my @src = @{$test->[2]};
+    my @pos = @{$test->[4]};
+    my $check_pos = @pos;
+    
     while (my $token = $lexer->next_token) {
-        my $expect_type = shift @{$test->[1]};
-        my $expect_src = shift @{$test->[2]};
+        my $expect_type = shift @types;
+        my $expect_src = shift @src;
                 
         is ($token->type, $expect_type);
         is ($token->src, $expect_src);            
+        
+        if ($check_pos) {
+            my $offset = shift @pos;
+            is ($token->offset, $offset);
+        }
     }
 }
 
@@ -73,4 +90,5 @@ ignore_whitespace = 0
 SELECT 1    FROM foo
 SELECT, WHITESPACE, ICONST, WHITESPACE, FROM, WHITESPACE, IDENT
 SELECT, " ", 1, "    ", FROM, " ", foo
+0, 6, 7, 8, 12, 16, 17
 ---

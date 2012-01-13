@@ -28,6 +28,14 @@ type(self)
     OUTPUT:
         RETVAL
 
+size_t
+offset(self)
+    Pg::Parser::Lexer::Token self
+    CODE:
+        RETVAL = token_offset(self);
+    OUTPUT:
+        RETVAL
+        
 const char *
 src(self)
     Pg::Parser::Lexer::Token self
