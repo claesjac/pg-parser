@@ -8,23 +8,24 @@
 
 #define MAKE_FIXED_TOKEN_FUNC(NAME, LENGTH) static void NAME (core_YYSTYPE *yylval, size_t *l) { *l = LENGTH; }
 
-struct Pg_Parser_Lexer {
-    core_yyscan_t       yyscanner;
-	base_yy_extra_type  yyextra;
-	int			        yyresult;    
-    YYLTYPE             prev_end_yylloc;
-    bool                ignore_whitespace;
-    const char          *src;
-};
-
-typedef struct Pg_Parser_Lexer Pg_Parser_Lexer;
-
 struct Pg_Parser_Lexer_Token {
     int     type;
     char    *src;
 };
     
 typedef struct Pg_Parser_Lexer_Token Pg_Parser_Lexer_Token;
+
+struct Pg_Parser_Lexer {
+    core_yyscan_t           yyscanner;
+	base_yy_extra_type      yyextra;
+	int			            yyresult;    
+    YYLTYPE                 prev_end_yylloc;
+    bool                    ignore_whitespace;
+    const char              *src;
+    Pg_Parser_Lexer_Token   *prev_token;
+};
+
+typedef struct Pg_Parser_Lexer Pg_Parser_Lexer;
 
 static void (*convert_token[NUM_TOKENS + 1])(core_YYSTYPE *, size_t *);
 
@@ -45,6 +46,7 @@ MAKE_FIXED_TOKEN_FUNC(char_p_token, 4)
 MAKE_FIXED_TOKEN_FUNC(op_token, 1)
 MAKE_FIXED_TOKEN_FUNC(timestamp_token, 9)
 MAKE_FIXED_TOKEN_FUNC(with_token, 4)
+MAKE_FIXED_TOKEN_FUNC(as_token, 2)
 
 void init_lexer(void) {
     int i = 0;
@@ -55,6 +57,9 @@ void init_lexer(void) {
     convert_token[OPEN_PAREN] =
     convert_token[CLOSE_PAREN] =
     convert_token[COMMA] =
+    convert_token[MULT] =
+    convert_token[PLUS] =
+    convert_token[MINUS] =
     op_token;
     
     convert_token[ICONST] = convert_token[PARAM] = ival_token;
@@ -67,6 +72,7 @@ void init_lexer(void) {
     convert_token[INTEGER] = 
     str_token;
     
+    convert_token[AS] = as_token;
     convert_token[TIMESTAMP] = timestamp_token;
     convert_token[WITH] = with_token;
     convert_token[TYPECAST] = typecast_token;
@@ -79,6 +85,8 @@ Pg_Parser_Lexer *create_lexer(const char *src) {
     
     lexer = (Pg_Parser_Lexer *) calloc(1, sizeof(Pg_Parser_Lexer));
     lexer->ignore_whitespace = true;
+    lexer->prev_token = NULL;
+    lexer->prev_end_yylloc = 0;
     lexer->src = strdup(src);
     lexer->yyscanner = scanner_init(src, &(lexer->yyextra.core_yy_extra),
 							 ScanKeywords, NumScanKeywords);
@@ -89,6 +97,10 @@ Pg_Parser_Lexer *create_lexer(const char *src) {
     return lexer;
 }
 
+void set_lexer_ignore_whitespace(Pg_Parser_Lexer *lexer, bool ignore_whitespace) {
+    lexer->ignore_whitespace = ignore_whitespace;
+}
+
 Pg_Parser_Lexer_Token *next_lexer_token(Pg_Parser_Lexer *lexer) {
     core_YYSTYPE    yylval;
     YYLTYPE         yylloc;
@@ -96,6 +108,15 @@ Pg_Parser_Lexer_Token *next_lexer_token(Pg_Parser_Lexer *lexer) {
     size_t          len;
     Pg_Parser_Lexer_Token *token = NULL;
     
+    /* This is a saved token from a whitespace injection,
+       that we should return instead of getting next token
+    */
+    if (lexer->prev_token) {
+        token = lexer->prev_token;
+        lexer->prev_token = NULL;
+        return token;
+    }
+
     yylval.ival = 0;
     
     int t = core_yylex(&yylval, &yylloc, lexer->yyscanner);
@@ -118,11 +139,23 @@ Pg_Parser_Lexer_Token *next_lexer_token(Pg_Parser_Lexer *lexer) {
             
         }
 
-        lexer->prev_end_yylloc = yylloc + len;        
-
         token = (Pg_Parser_Lexer_Token *) calloc(1, sizeof(Pg_Parser_Lexer_Token));
         token->type = t;    
         token->src = strdup(buff);
+        
+        /* Check if we should inject a whitespace and if so
+           postpone the last token until next call */
+        if (lexer->ignore_whitespace == false) {
+            if (yylloc > lexer->prev_end_yylloc) {
+                lexer->prev_token = token;
+            
+                token = (Pg_Parser_Lexer_Token *) calloc(1, sizeof(Pg_Parser_Lexer_Token));
+                token->type = WHITESPACE;    
+                token->src = strndup(lexer->src + lexer->prev_end_yylloc, yylloc - lexer->prev_end_yylloc);
+            }
+        }
+        
+        lexer->prev_end_yylloc = yylloc + len;                
     }
     
     return token;

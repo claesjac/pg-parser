@@ -4,6 +4,8 @@ use 5.014001;
 use strict;
 use warnings;
 
+use Pg::Parser::Lexer;
+
 require Exporter;
 
 our @ISA = qw(Exporter);

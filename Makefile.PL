@@ -123,10 +123,21 @@ static const char *NodeTypes[] = {
         }
     }
     close $in;
-    
+
+    # Once char ops
     $token_types[40] = ["OPEN_PAREN", 40];
     $token_types[41] = ["CLOSE_PAREN", 41];
+    $token_types[42] = ["MULT", 42];
+    $token_types[43] = ["PLUS", 43];
     $token_types[44] = ["COMMA", 44];
+    $token_types[45] = ["MINUS", 45];
+  
+    my $max_token_id = max map $_->[1], grep defined, @token_types;
+    
+    $max_token_id++;
+    
+    $token_types[$max_token_id] = ["WHITESPACE", $max_token_id];
+    $max_token_id++;
     
     open my $out, ">", "pg_token_types.h" or die "Can't open token_types.h because of: $!";
     print $out q/
@@ -137,13 +148,11 @@ static const char *TokenTypes[] = {
     print $out q/
 };
 
-/;
-    
+/;    
     print $out join "\n", map { "#define $_->[0] $_->[1]" } grep { defined } @token_types;
     
-    my $num_tokens = max map $_->[1], grep defined, @token_types;
 
-    print $out "\n\n#define NUM_TOKENS $num_tokens\n";
+    print $out "\n\n#define NUM_TOKENS $max_token_id\n";
 
     close $out;
 

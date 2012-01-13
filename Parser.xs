@@ -45,14 +45,20 @@ Pg::Parser::Lexer::Token self;
 MODULE = Pg::Parser     PACKAGE = Pg::Parser::Lexer
 
 Pg::Parser::Lexer
-lex(pkg,src)
-    SV *pkg;
+_lex(src)
     const char *src;
     CODE:
         RETVAL = create_lexer(src);
     OUTPUT:
         RETVAL
 
+void
+set_ignore_whitespace(self,value)
+    Pg::Parser::Lexer self;
+    bool value;
+    CODE:
+        set_lexer_ignore_whitespace(self, value);
+    
 Pg::Parser::Lexer::Token
 next_token(self)
     Pg::Parser::Lexer self;
