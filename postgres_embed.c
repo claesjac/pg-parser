@@ -7,13 +7,20 @@ static void dummy_cleanup(int code, Datum args) {
     
 }
 
+static void myexit(void) {
+    fprintf(stderr, "In my exit");
+}
+
 void InitEmbeddedPostgres(void) {
     MyProcPid = getpid();
 	MyStartTime = time(NULL);
 
 	MemoryContextInit();
+
+    return;
+    
 	InitializeGUCOptions();
-	
+	    
 	if (!SelectConfigFiles("postgres-db", "postgres")) {
 		proc_exit(1);
 	}
@@ -36,5 +43,5 @@ void InitEmbeddedPostgres(void) {
 }
 
 void CloseEmbeddedPostgres(void) {
-    shmem_exit(0);
+    proc_exit_prepare(0);
 }

@@ -1,6 +1,9 @@
 use 5.014001;
+use warnings;
+
 use App::Info::RDBMS::PostgreSQL;
 use App::Info::Handler::Prompt;
+use List::Util qw(max);
 use ExtUtils::MakeMaker;
 
 use inc::Pg::Parser::ParseNodesGenerator;
@@ -70,6 +73,7 @@ unlink "typemap";
 open my $typemap, ">", "typemap" or die "Can't open typemap because of: $!";
 print $typemap "TYPEMAP\n\n";
 printf $typemap "%-50s T_PTROBJ\n", "Pg::Parser::Lexer";
+printf $typemap "%-50s T_PTROBJ\n", "Pg::Parser::Lexer::Token";
 close $typemap;
 
 # Generate node type names
@@ -130,9 +134,15 @@ static const char *TokenTypes[] = {
 };
 
 /;
-
+    
     print $out join "\n", map { "#define $_->[0] $_->[1]" } grep { defined } @token_types;
+    
+    my $num_tokens = max map $_->[1], grep defined, @token_types;
+
+    print $out "\n\n#define NUM_TOKENS $num_tokens\n";
+
     close $out;
+
 }
 
 Pg::Parser::ParseNodesGenerator->generate($POSTGRES_SRC);

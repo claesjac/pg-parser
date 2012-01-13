@@ -18,6 +18,30 @@
 extern void InitEmbeddedPostgres(void);
 extern void CloseEmbeddedPostgres(void);
 
+MODULE = Pg::Parser     PACKAGE = Pg::Parser::Lexer::Token
+
+const char *
+type(self)
+    Pg::Parser::Lexer::Token self
+    CODE:
+        RETVAL = token_type(self);
+    OUTPUT:
+        RETVAL
+
+const char *
+src(self)
+    Pg::Parser::Lexer::Token self
+    CODE:
+        RETVAL = token_src(self);
+    OUTPUT:
+        RETVAL
+
+void
+DESTROY(self)
+Pg::Parser::Lexer::Token self;
+    CODE:
+        destroy_token(self);
+    
 MODULE = Pg::Parser     PACKAGE = Pg::Parser::Lexer
 
 Pg::Parser::Lexer
@@ -29,7 +53,7 @@ lex(pkg,src)
     OUTPUT:
         RETVAL
 
-int
+Pg::Parser::Lexer::Token
 next_token(self)
     Pg::Parser::Lexer self;
     CODE:
@@ -73,5 +97,6 @@ parse(pkg,src)
         RETVAL
 
 BOOT:
+    init_lexer();
     InitEmbeddedPostgres();    
     

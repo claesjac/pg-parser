@@ -6,6 +6,8 @@
 
 #include "pg_token_types.h"
 
+#define MAKE_FIXED_TOKEN_FUNC(NAME, LENGTH) static void NAME (core_YYSTYPE *yylval, size_t *l) { *l = LENGTH; }
+
 struct Pg_Parser_Lexer {
     core_yyscan_t       yyscanner;
 	base_yy_extra_type  yyextra;
@@ -16,6 +18,49 @@ struct Pg_Parser_Lexer {
 };
 
 typedef struct Pg_Parser_Lexer Pg_Parser_Lexer;
+
+struct Pg_Parser_Lexer_Token {
+    int     type;
+    char    *src;
+};
+    
+typedef struct Pg_Parser_Lexer_Token Pg_Parser_Lexer_Token;
+
+static void (*convert_token[NUM_TOKENS + 1])(core_YYSTYPE *, size_t *);
+
+static char buff[128];
+
+static void ival_token(core_YYSTYPE *yylval, size_t *len) {
+    sprintf(buff, "%d", yylval->ival);
+    *len = strlen(buff);
+}
+
+static void str_token(core_YYSTYPE *yylval, size_t *len) {
+    *len = strlen(yylval->str);
+}
+
+MAKE_FIXED_TOKEN_FUNC(typecast_token, 2)
+MAKE_FIXED_TOKEN_FUNC(char_p_token, 4)
+
+void init_lexer(void) {
+    int i = 0;
+    for (i = 0; i < NUM_TOKENS; i++) {
+        convert_token[i] = NULL;
+    }
+    
+    convert_token[ICONST] = convert_token[PARAM] = ival_token;
+
+    convert_token[CREATE] =
+    convert_token[TABLE] =
+    convert_token[SELECT] = 
+    convert_token[IDENT] = 
+    convert_token[FROM] = 
+    convert_token[INTEGER] = 
+    str_token;
+    
+    convert_token[TYPECAST] = typecast_token;
+    convert_token[CHAR_P] = char_p_token;
+}
 
 Pg_Parser_Lexer *create_lexer(const char *src) {
     Pg_Parser_Lexer *lexer;
@@ -32,37 +77,54 @@ Pg_Parser_Lexer *create_lexer(const char *src) {
     return lexer;
 }
 
-int next_lexer_token(Pg_Parser_Lexer *lexer) {
-    core_YYSTYPE        yylval;
-    YYLTYPE             yylloc;
-
+Pg_Parser_Lexer_Token *next_lexer_token(Pg_Parser_Lexer *lexer) {
+    core_YYSTYPE    yylval;
+    YYLTYPE         yylloc;
+    void            (*converter)(core_YYSTYPE *, size_t *);
+    size_t          len;
+    Pg_Parser_Lexer_Token *token = NULL;
+    
     yylval.ival = 0;
     
-    int token = core_yylex(&yylval, &yylloc, lexer->yyscanner);
+    int t = core_yylex(&yylval, &yylloc, lexer->yyscanner);
 
-    if (token) {
-        char *part = NULL;
-        size_t len;
+    if (t) {
+        len = 0;
         
-        fprintf(stderr, "Got token: %d %s\n", token, TokenTypes[token]);
-        if (TokenTypes[token] != NULL) {
-            /* The only tokens who use ival are these */
-            if (token == ICONST || token == PARAM ) {
-                part = calloc(64, sizeof(char));
-                sprintf(part, "%d", yylval.ival);
-                len = strlen(part);
+        if (TokenTypes[t] != NULL) {
+            buff[0] = '\0';
+            converter = convert_token[t];
+            if (converter) {
+                converter(&yylval, &len);
             }
-            else {
-                len = strlen(yylval.str);
-                part = strndup(lexer->src + yylloc, len);
+            
+            if (len) {
+                memcpy(buff, lexer->src + yylloc, len);
+                buff[len] = '\0';
             }
-        
-            fprintf(stderr, "'%s' from %d to %d\n", part, yylloc, yylloc + len);
+            
             lexer->prev_end_yylloc = yylloc + len;        
+            
+            token = (Pg_Parser_Lexer_Token *) calloc(1, sizeof(Pg_Parser_Lexer_Token));
+            token->type = t;    
+            token->src = strdup(buff);
         }
     }
     
     return token;
+}
+
+const char *token_type(Pg_Parser_Lexer_Token *token) {
+    return TokenTypes[token->type];
+}
+
+const char *token_src(Pg_Parser_Lexer_Token *token) {
+    return token->src;
+}
+
+void destroy_token(Pg_Parser_Lexer_Token *token) {
+    free(token->src);
+    free(token);
 }
 
 void destroy_lexer(Pg_Parser_Lexer *lexer) {
