@@ -54,23 +54,28 @@ void init_lexer(void) {
     for (i = 0; i < NUM_TOKENS; i++) {
         convert_token[i] = NULL;
     }
-    
-    convert_token[OPEN_PAREN] =
-    convert_token[CLOSE_PAREN] =
-    convert_token[COMMA] =
-    convert_token[MULT] =
-    convert_token[PLUS] =
-    convert_token[MINUS] =
+                     
+    convert_token[OP_NOT]           =   convert_token[OP_NUMBER_SIGN]   =
+    convert_token[OP_MODULO]        =   convert_token[OP_AND]           =
+    convert_token[OPEN_PAREN]       =   convert_token[CLOSE_PAREN]      =
+    convert_token[OP_MULT]          =   convert_token[OP_PLUS]          =
+    convert_token[COMMA]            =   convert_token[OP_MINUS]         =
+    convert_token[DOT]              =   convert_token[OP_DIV]           =
+    convert_token[COLON]            =   convert_token[SEMICOLON]        =
+    convert_token[OP_LESS]          =   convert_token[OP_EQUALS]        =
+    convert_token[OP_GREATER]       =   convert_token[OP_QUESTION_MARK] =
+    convert_token[OP_AT]            =   convert_token[OPEN_BRACKET]     =
+    convert_token[CLOSE_BRACKET]    =   convert_token[OP_XOR]           =
+    convert_token[OP_ACCENT]        =   convert_token[OP_NEG]           =
     op_token;
     
     convert_token[ICONST] = convert_token[PARAM] = ival_token;
 
-    convert_token[CREATE] =
-    convert_token[TABLE] =
-    convert_token[SELECT] = 
-    convert_token[IDENT] = 
-    convert_token[FROM] = 
-    convert_token[INTEGER] = 
+    convert_token[CREATE]           =   convert_token[TABLE]            =
+    convert_token[SELECT]           =   convert_token[IDENT]            = 
+    convert_token[FROM]             =   convert_token[INTEGER]          = 
+    convert_token[UPDATE]           =   convert_token[SET]              =
+    convert_token[WHERE]            =   convert_token[Op]               =
     str_token;
     
     convert_token[AS] = as_token;
@@ -170,6 +175,10 @@ const char *token_type(Pg_Parser_Lexer_Token *token) {
 
 const char *token_src(Pg_Parser_Lexer_Token *token) {
     return token->src;
+}
+
+bool token_is_operator(Pg_Parser_Lexer_Token *token) {
+    return token->type == Op || strstr(TokenTypes[token->type], "OP_") == TokenTypes[token->type] ? true : false;
 }
 
 size_t token_offset(Pg_Parser_Lexer_Token *token) {

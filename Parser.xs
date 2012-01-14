@@ -28,6 +28,14 @@ type(self)
     OUTPUT:
         RETVAL
 
+bool
+is_operator(self)
+    Pg::Parser::Lexer::Token self
+    CODE:
+        RETVAL = token_is_operator(self);
+    OUTPUT:
+        RETVAL
+        
 size_t
 offset(self)
     Pg::Parser::Lexer::Token self

@@ -125,13 +125,33 @@ static const char *NodeTypes[] = {
     close $in;
 
     # Once char ops
+    $token_types[33] = ["OP_NOT", 33];
+    $token_types[35] = ["OP_NUMBER_SIGN", 35];
+    $token_types[37] = ["OP_MODULO", 37];
+    $token_types[38] = ["OP_AND", 38];
     $token_types[40] = ["OPEN_PAREN", 40];
     $token_types[41] = ["CLOSE_PAREN", 41];
-    $token_types[42] = ["MULT", 42];
-    $token_types[43] = ["PLUS", 43];
+    $token_types[42] = ["OP_MULT", 42];
+    $token_types[43] = ["OP_PLUS", 43];
     $token_types[44] = ["COMMA", 44];
-    $token_types[45] = ["MINUS", 45];
-  
+    $token_types[45] = ["OP_MINUS", 45];    
+    $token_types[46] = ["DOT", 46];
+    $token_types[47] = ["OP_DIV", 47];
+    $token_types[58] = ["COLON", 58];
+    $token_types[59] = ["SEMICOLON", 59];
+    $token_types[60] = ["OP_LESS", 60];
+    $token_types[61] = ["OP_EQUALS", 61];
+    $token_types[62] = ["OP_GREATER", 62];
+    $token_types[63] = ["OP_QUESTION_MARK", 63];
+    $token_types[64] = ["OP_AT", 64];
+    $token_types[91] = ["OPEN_BRACKET", 91];
+    $token_types[93] = ["CLOSE_BRACKET", 93];
+    $token_types[94] = ["OP_XOR", 94];
+    $token_types[96] = ["OP_ACCENT", 96];
+    $token_types[124] = ["OP_OR", 124];
+    $token_types[126] = ["OP_NEG", 126];
+
+    
     my $max_token_id = max map $_->[1], grep defined, @token_types;
     
     $max_token_id++;

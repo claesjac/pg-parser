@@ -12,5 +12,6 @@ extern Pg__Parser__Lexer__Token next_lexer_token(Pg__Parser__Lexer);
 /* Token stuff */
 extern const char *token_type(Pg__Parser__Lexer__Token);
 extern const char *token_src(Pg__Parser__Lexer__Token);
+extern bool token_is_operator(Pg__Parser__Lexer__Token);
 extern size_t token_offset(Pg__Parser__Lexer__Token);
 extern void destroy_token(Pg__Parser__Lexer__Token);

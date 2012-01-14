@@ -33,7 +33,7 @@ while (my $opts = <DATA>) {
     my $types = <DATA>;
     chomp $types;
     
-    my @types = map uc, split/\s*,\s*/, $types;
+    my @types = split/\s*,\s*/, $types;
     $csv->parse(scalar <DATA>) or BAIL_OUT "CSV parsing failed because of " . $csv->error_diag;
         
     # Expect separator
@@ -75,11 +75,31 @@ for my $test (@tests) {
     }
 }
 
+# Test operator stuff
+{
+    my $lexer = Pg::Parser::Lexer->lex("SELECT a + b, x <> foo, y >>> 1, *");
+    ok(!$lexer->next_token->is_operator);
+    $lexer->next_token;
+    ok($lexer->next_token->is_operator);
+    $lexer->next_token;
+    $lexer->next_token;
+    ok(!$lexer->next_token->is_operator);
+    ok($lexer->next_token->is_operator);
+    $lexer->next_token;
+    $lexer->next_token;
+    $lexer->next_token;
+    ok($lexer->next_token->is_operator);
+}
 __DATA__
 
-SELECT 1, MAX(foo) AS bar, * FROM tbl
-SELECT, ICONST, COMMA, IDENT, OPEN_PAREN, IDENT, CLOSE_PAREN, AS, IDENT, COMMA, MULT, FROM, IDENT
-SELECT, 1, ",", MAX, (, foo, ), AS, bar, ",", *, FROM, tbl
+SELECT 1, MAX(foo) AS bar, * FROM tbl WHERE x != y
+SELECT, ICONST, COMMA, IDENT, OPEN_PAREN, IDENT, CLOSE_PAREN, AS, IDENT, COMMA, OP_MULT, FROM, IDENT, WHERE, IDENT, Op, IDENT
+SELECT, 1, ",", MAX, (, foo, ), AS, bar, ",", *, FROM, tbl, WHERE, x, !=, y
+---
+
+UPDATE bar SET x = y + 1
+UPDATE, IDENT, SET, IDENT, OP_EQUALS, IDENT, OP_PLUS, ICONST
+UPDATE, bar, SET, x, =, y, +, 1
 ---
 
 Create Table Foo ( id INT, bar TimeStamp WITh TZ )
