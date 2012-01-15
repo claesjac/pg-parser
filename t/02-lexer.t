@@ -93,7 +93,7 @@ for my $test (@tests) {
 
 # Test lines offset calculations
 {
-    my $lexer = Pg::Parser::Lexer->lex(<<__END_OF_SQL__);
+    my $lexer = Pg::Parser::Lexer->lex(<<__END_OF_SQL__, { ignore_whitespace => 0 });
 SELECT foo, bar
   FROM quax
  WHERE herp = 'derp' AND 
@@ -103,6 +103,10 @@ __END_OF_SQL__
     my $t = $lexer->next_token();
     is($t->line, 1);
     is($t->column, 1);
+
+    $t = $lexer->next_token();
+    is($t->line, 1);
+    is($t->column, 7);
     
     $t = $lexer->next_token();
     is($t->line, 1);
@@ -110,6 +114,11 @@ __END_OF_SQL__
 
     $lexer->next_token();
     $lexer->next_token();
+    $lexer->next_token();
+
+    $t = $lexer->next_token();
+    is($t->line, 1);
+    is($t->column, 16);
 
     $t = $lexer->next_token();
     is($t->line, 2);

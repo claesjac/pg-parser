@@ -123,7 +123,7 @@ static void build_line_offsets(Pg_Parser_Lexer *lexer) {
 }
 
 void calculate_token_position(Pg_Parser_Lexer *lexer, Pg_Parser_Lexer_Token *token) {
-    uint32_t i = lexer->last_token_line;
+    uint32_t i = lexer->last_token_line ? lexer->last_token_line - 1 : 0;
     
     int *line_offsets = lexer->line_offsets;
     while (i < lexer->line_count && line_offsets[i] <= token->offset) {
