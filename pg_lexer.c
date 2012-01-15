@@ -52,8 +52,7 @@ static void str_token(core_YYSTYPE *yylval, size_t *len) {
 }
 
 static void sconst_token(core_YYSTYPE *yylval, size_t *len) {
-    fprintf(stderr, "yylval: '%s'\n", yylval->str);
-    *len = strlen(yylval->str) + 1;
+    *len = strlen(yylval->str) + 2;
 }
 
 MAKE_FIXED_TOKEN_FUNC(typecast_token, 2)
