@@ -36,11 +36,27 @@ is_operator(self)
     OUTPUT:
         RETVAL
         
-size_t
+int
 offset(self)
     Pg::Parser::Lexer::Token self
     CODE:
         RETVAL = token_offset(self);
+    OUTPUT:
+        RETVAL
+
+int
+line(self)
+    Pg::Parser::Lexer::Token self
+    CODE:
+        RETVAL = token_line(self);
+    OUTPUT:
+        RETVAL
+
+int
+column(self)
+    Pg::Parser::Lexer::Token self
+    CODE:
+        RETVAL = token_column(self);
     OUTPUT:
         RETVAL
         

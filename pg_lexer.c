@@ -11,7 +11,9 @@
 struct Pg_Parser_Lexer_Token {
     int     type;
     char    *src;
-    size_t  offset;
+    int     offset;
+    int     line;
+    int     column;
 };
     
 typedef struct Pg_Parser_Lexer_Token Pg_Parser_Lexer_Token;
@@ -23,6 +25,9 @@ struct Pg_Parser_Lexer {
     YYLTYPE                 prev_end_yylloc;
     bool                    ignore_whitespace;
     const char              *src;
+    int                     *line_offsets;
+    int                     line_count;
+    int                     last_token_line;
     Pg_Parser_Lexer_Token   *prev_token;
 };
 
@@ -32,22 +37,27 @@ static void (*convert_token[NUM_TOKENS + 1])(core_YYSTYPE *, size_t *);
 
 static char buff[128];
 
-static void ival_token(core_YYSTYPE *yylval, size_t *len) {
+static void iconst_token(core_YYSTYPE *yylval, size_t *len) {
     sprintf(buff, "%d", yylval->ival);
     *len = strlen(buff);
+}
+
+static void param_token(core_YYSTYPE *yylval, size_t *len) {
+    iconst_token(yylval, len);
+    *len += 1;
 }
 
 static void str_token(core_YYSTYPE *yylval, size_t *len) {
     *len = strlen(yylval->str);
 }
 
+static void sconst_token(core_YYSTYPE *yylval, size_t *len) {
+    fprintf(stderr, "yylval: '%s'\n", yylval->str);
+    *len = strlen(yylval->str) + 1;
+}
+
 MAKE_FIXED_TOKEN_FUNC(typecast_token, 2)
-MAKE_FIXED_TOKEN_FUNC(int_p_token, 3)
-MAKE_FIXED_TOKEN_FUNC(char_p_token, 4)
 MAKE_FIXED_TOKEN_FUNC(op_token, 1)
-MAKE_FIXED_TOKEN_FUNC(timestamp_token, 9)
-MAKE_FIXED_TOKEN_FUNC(with_token, 4)
-MAKE_FIXED_TOKEN_FUNC(as_token, 2)
 
 void init_lexer(void) {
     int i = 0;
@@ -69,22 +79,66 @@ void init_lexer(void) {
     convert_token[OP_ACCENT]        =   convert_token[OP_NEG]           =
     op_token;
     
-    convert_token[ICONST] = convert_token[PARAM] = ival_token;
+    convert_token[ICONST] = iconst_token;
+    convert_token[PARAM] = param_token;
 
-    convert_token[CREATE]           =   convert_token[TABLE]            =
-    convert_token[SELECT]           =   convert_token[IDENT]            = 
-    convert_token[FROM]             =   convert_token[INTEGER]          = 
-    convert_token[UPDATE]           =   convert_token[SET]              =
-    convert_token[WHERE]            =   convert_token[Op]               =
-    str_token;
+    /* Keywords */
+#ifdef PG_KEYWORD
+#undef PG_KEYWORD
+#endif
+
+#define PG_KEYWORD(str, token, type) convert_token[token] = str_token;
+#include <parser/kwlist.h>
     
-    convert_token[AS] = as_token;
-    convert_token[TIMESTAMP] = timestamp_token;
-    convert_token[WITH] = with_token;
     convert_token[TYPECAST] = typecast_token;
-    convert_token[CHAR_P] = char_p_token;
-    convert_token[INT_P] = int_p_token;
+    convert_token[IDENT] = str_token;
+    convert_token[Op] = str_token;
+    convert_token[SCONST] = sconst_token;
 }
+
+#define NUM_START_LINES 1024
+
+static void build_line_offsets(Pg_Parser_Lexer *lexer) {
+    const char *scan_ptr = lexer->src;
+    int *line_offsets;
+    int current_line = 0;
+    
+    line_offsets = (int *) calloc(NUM_START_LINES, sizeof(int));
+    line_offsets[current_line++] = 0;
+    
+    while (*scan_ptr) {        
+        if (*scan_ptr == '\n' || *scan_ptr == '\r') {
+            scan_ptr++;
+            if (*scan_ptr == '\n') {
+                scan_ptr++;
+            }
+            
+            line_offsets[current_line++] = scan_ptr - lexer->src;
+            fprintf(stderr, "Added line %d offset at: %d\n", current_line, line_offsets[current_line -1]);
+        }
+        scan_ptr++;
+    }
+    
+    lexer->line_offsets = line_offsets;
+    lexer->line_count = current_line;
+    lexer->last_token_line = 0;
+    
+    fprintf(stderr, "Scanning completed, found %d lines\n", current_line);
+}
+
+void calculate_token_position(Pg_Parser_Lexer *lexer, Pg_Parser_Lexer_Token *token) {
+    uint32_t i = lexer->last_token_line;
+    
+    int *line_offsets = lexer->line_offsets;
+    while (line_offsets[i] <= token->offset) {
+        i++;
+    }
+
+    token->line = i;
+    token->column = token->offset - line_offsets[i - 1] + 1;
+    lexer->last_token_line = token->line;
+}
+
 
 Pg_Parser_Lexer *create_lexer(const char *src) {
     Pg_Parser_Lexer *lexer;
@@ -94,6 +148,9 @@ Pg_Parser_Lexer *create_lexer(const char *src) {
     lexer->prev_token = NULL;
     lexer->prev_end_yylloc = 0;
     lexer->src = strdup(src);
+    
+    build_line_offsets(lexer);
+    
     lexer->yyscanner = scanner_init(src, &(lexer->yyextra.core_yy_extra),
 							 ScanKeywords, NumScanKeywords);
 
@@ -149,6 +206,7 @@ Pg_Parser_Lexer_Token *next_lexer_token(Pg_Parser_Lexer *lexer) {
         token->type = t;    
         token->src = strdup(buff);
         token->offset = yylloc;
+        calculate_token_position(lexer, token);
         
         /* Check if we should inject a whitespace and if so
            postpone the last token until next call */
@@ -160,6 +218,7 @@ Pg_Parser_Lexer_Token *next_lexer_token(Pg_Parser_Lexer *lexer) {
                 token->type = WHITESPACE;
                 token->offset = lexer->prev_end_yylloc;
                 token->src = strndup(lexer->src + lexer->prev_end_yylloc, yylloc - lexer->prev_end_yylloc);
+                calculate_token_position(lexer, token);
             }
         }
         
@@ -181,8 +240,16 @@ bool token_is_operator(Pg_Parser_Lexer_Token *token) {
     return token->type == Op || strstr(TokenTypes[token->type], "OP_") == TokenTypes[token->type] ? true : false;
 }
 
-size_t token_offset(Pg_Parser_Lexer_Token *token) {
+int token_offset(Pg_Parser_Lexer_Token *token) {
     return token->offset;
+}
+
+int token_line(Pg_Parser_Lexer_Token *token) {
+    return token->line;    
+}
+
+int token_column(Pg_Parser_Lexer_Token *token) {
+    return token->column;    
 }
 
 void destroy_token(Pg_Parser_Lexer_Token *token) {
@@ -192,5 +259,7 @@ void destroy_token(Pg_Parser_Lexer_Token *token) {
 
 void destroy_lexer(Pg_Parser_Lexer *lexer) {
     scanner_finish(lexer->yyscanner);
+    free(lexer->src);
+    free(lexer->line_offsets);
     free(lexer);
 }

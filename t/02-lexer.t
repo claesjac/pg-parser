@@ -90,6 +90,32 @@ for my $test (@tests) {
     $lexer->next_token;
     ok($lexer->next_token->is_operator);
 }
+
+# Test lines offset calculations
+{
+    my $lexer = Pg::Parser::Lexer->lex(<<__END_OF_SQL__);
+SELECT foo, bar
+  FROM quax
+ WHERE herp = 'derp' AND 
+       baz = TRUE
+__END_OF_SQL__
+
+    my $t = $lexer->next_token();
+    is($t->line, 1);
+    is($t->column, 1);
+    
+    $t = $lexer->next_token();
+    is($t->line, 1);
+    is($t->column, 8);
+
+    $lexer->next_token();
+    $lexer->next_token();
+
+    $t = $lexer->next_token();
+    is($t->line, 2);
+    is($t->column, 3);
+
+}
 __DATA__
 
 SELECT 1, MAX(foo) AS bar, * FROM tbl WHERE x != y
