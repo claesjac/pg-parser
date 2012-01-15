@@ -114,7 +114,6 @@ static void build_line_offsets(Pg_Parser_Lexer *lexer) {
             }
             
             line_offsets[current_line++] = scan_ptr - lexer->src;
-            fprintf(stderr, "Added line %d offset at: %d\n", current_line, line_offsets[current_line -1]);
         }
         scan_ptr++;
     }
@@ -122,15 +121,13 @@ static void build_line_offsets(Pg_Parser_Lexer *lexer) {
     lexer->line_offsets = line_offsets;
     lexer->line_count = current_line;
     lexer->last_token_line = 0;
-    
-    fprintf(stderr, "Scanning completed, found %d lines\n", current_line);
 }
 
 void calculate_token_position(Pg_Parser_Lexer *lexer, Pg_Parser_Lexer_Token *token) {
     uint32_t i = lexer->last_token_line;
     
     int *line_offsets = lexer->line_offsets;
-    while (line_offsets[i] <= token->offset) {
+    while (i < lexer->line_count && line_offsets[i] <= token->offset) {
         i++;
     }
 
