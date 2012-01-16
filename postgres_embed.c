@@ -3,23 +3,19 @@
 #include <utils/memutils.h>
 #include <utils/timestamp.h>
 
-static void dummy_cleanup(int code, Datum args) {
+/*static void dummy_cleanup(int code, Datum args) {
     
-}
-
-static void myexit(void) {
-    fprintf(stderr, "In my exit");
-}
+}*/
 
 void InitEmbeddedPostgres(void) {
-    MyProcPid = getpid();
-	MyStartTime = time(NULL);
+/*    MyProcPid = getpid();
+	MyStartTime = time(NULL);*/
 
 	MemoryContextInit();
 
     return;
     
-	InitializeGUCOptions();
+/*	InitializeGUCOptions();
 	    
 	if (!SelectConfigFiles("postgres-db", "postgres")) {
 		proc_exit(1);
@@ -39,9 +35,9 @@ void InitEmbeddedPostgres(void) {
 											   
 	PgStartTime = GetCurrentTimestamp();
 	
-    on_proc_exit(dummy_cleanup, 0);
+    on_proc_exit(dummy_cleanup, 0);*/
 }
 
 void CloseEmbeddedPostgres(void) {
-    proc_exit_prepare(0);
+/*    proc_exit_prepare(0);*/
 }
