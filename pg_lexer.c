@@ -166,6 +166,8 @@ Pg_Parser_Lexer_Token *next_lexer_token(Pg_Parser_Lexer *lexer) {
     void            (*converter)(core_YYSTYPE *, size_t *);
     size_t          len;
     Pg_Parser_Lexer_Token *token = NULL;
+    size_t          w_len;
+    int             t;
     
     /* This is a saved token from a whitespace injection,
        that we should return instead of getting next token
@@ -178,7 +180,7 @@ Pg_Parser_Lexer_Token *next_lexer_token(Pg_Parser_Lexer *lexer) {
 
     yylval.ival = 0;
     
-    int t = core_yylex(&yylval, &yylloc, lexer->yyscanner);
+    t = core_yylex(&yylval, &yylloc, lexer->yyscanner);
 
     if (t) {
         len = 0;
@@ -213,7 +215,10 @@ Pg_Parser_Lexer_Token *next_lexer_token(Pg_Parser_Lexer *lexer) {
                 token = (Pg_Parser_Lexer_Token *) calloc(1, sizeof(Pg_Parser_Lexer_Token));
                 token->type = WHITESPACE;
                 token->offset = lexer->prev_end_yylloc;
-                token->src = strndup(lexer->src + lexer->prev_end_yylloc, yylloc - lexer->prev_end_yylloc);
+                w_len = yylloc - lexer->prev_end_yylloc;
+                token->src = calloc(w_len + 1, sizeof(char));
+                token->src = memcpy(token->src, lexer->src + lexer->prev_end_yylloc, w_len);
+                token->src[w_len] = '\0';
                 calculate_token_position(lexer, token);
             }
         }
