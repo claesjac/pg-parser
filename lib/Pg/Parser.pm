@@ -5,6 +5,7 @@ use strict;
 use warnings;
 
 use Pg::Parser::Lexer;
+use Pg::Parser::Pg::Node;
 
 require Exporter;
 
@@ -35,6 +36,8 @@ XSLoader::load('Pg::Parser', $VERSION);
 END {
     Pg::Parser::close_postgres();
 }
+
+@Pg::Parser::Pg::String::ISA = qw(Pg::Parser::Pg::Value);
 
 1;
 __END__

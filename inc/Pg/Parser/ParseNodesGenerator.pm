@@ -60,7 +60,7 @@ sub generate {
     # Generate typemap entries
     open my $typemap, ">>", "typemap" or die "Can't open typemap because of: $!";
     for my $type (@type_order) {
-        printf $typemap "%-50s T_PTROBJ\n", "Pg::Parser::Pg::$type";
+        printf $typemap "%-50s PG_PARSER_NODE\n", "Pg::Parser::Pg::$type";
     }
     close $typemap;
     
@@ -71,16 +71,28 @@ sub generate {
 MODULE = Pg::Parser    PACKAGE = Pg::Parser::Pg::Value
 
 const char *
-val_str(self)
+str_value(self)
     Pg::Parser::Pg::Value self;
-    PREINIT:
-        Value *v;
     CODE:
-        v = (Value *) self; 
-        RETVAL = v->val.str;
+        RETVAL = strVal(self);
     OUTPUT:
         RETVAL
 
+int
+int_value(self)
+    Pg::Parser::Pg::Value self;
+    CODE:
+        RETVAL = intVal(self);
+    OUTPUT:
+        RETVAL
+
+float
+float_value(self)
+    Pg::Parser::Pg::Value self;
+    CODE:
+        RETVAL = floatVal(self);
+    OUTPUT:
+        RETVAL
 
 const char *
 type(self)

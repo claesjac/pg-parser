@@ -180,6 +180,28 @@ static const char *TokenTypes[] = {
 
 Pg::Parser::ParseNodesGenerator->generate($POSTGRES_SRC);
 
+open $typemap, ">>", "typemap" or die "Can't open typemap for appending because of: $!";
+print $typemap q{
+
+INPUT
+
+PG_PARSER_NODE
+    if (SvROK($arg) && (sv_derived_from($arg, \"${ntype}\") || sv_derived_from($arg, \"Pg::Parser::Pg::Node\"))) {
+        IV tmp = SvIV((SV*)SvRV($arg));
+        $var = INT2PTR($type,tmp);
+    }
+    else
+        Perl_croak(aTHX_ \"%s: %s is not of type %s\",
+                    ${$ALIAS?\q[GvNAME(CvGV(cv))]:\qq[\"$pname\"]},
+                    \"$var\", \"$ntype\")
+
+OUTPUT
+
+PG_PARSER_NODE
+    sv_setref_pv($arg, \"${ntype}\", (void*)$var);
+    
+};
+close $typemap;
 # See lib/ExtUtils/MakeMaker.pm for details of how to influence
 # the contents of the Makefile that is written.
 WriteMakefile(
