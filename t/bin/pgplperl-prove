@@ -1,0 +1,76 @@
+#!/usr/bin/env perl
+
+use strict;
+use warnings;
+
+use Cwd;
+use DBI;
+use File::Spec;
+use File::Slurp qw(slurp);
+use Getopt::Std;
+
+unlink "postgres-db/postgres.log";
+system("pg_ctl", "-D", "postgres-db", "-l", "postgres-db/postgres.log", "restart");
+
+my $dbh = DBI->connect("dbi:Pg:dbname=pg-parser", "", "", { RaiseError => 1, AutoCommit => 1 });
+
+my %opts;
+unless (getopts('bl', \%opts)) {
+    print "Usage: pgplperl-prove [-l] [-b] <file>\n";
+    exit 1;
+}
+
+# Check if prove function is installed
+eval {
+$dbh->do("DROP FUNCTION pgplperl_prove(text,text,text);");
+};
+#open my $log, ">", "postgres-db/postgres.log";
+#print $log "";
+#close $log;
+
+my ($installed) = $dbh->selectrow_array("SELECT 1 FROM pg_proc WHERE proname = 'pgplperl_prove'");
+unless ($installed) {
+    # Install pgplperl_prove()
+    my $src = do { local $/; <DATA> };
+    $dbh->do($src);
+}
+
+my $blib;
+$blib = File::Spec->catdir(cwd, "blib") if $opts{b};
+my $lib;
+$lib = File::Spec->catdir(cwd, "lib") if $opts{l};
+
+my $src = do { local $/; <>; };
+my ($results) = $dbh->selectrow_array("SELECT * FROM pgplperl_prove(?, ?, ?)", {}, $blib, $lib, $src);
+$results //= "";
+print $results, "\n";
+
+$dbh->disconnect();
+
+print slurp("postgres-db/postgres.log");
+
+__END__
+CREATE OR REPLACE FUNCTION pgplperl_prove(text, text, text) RETURNS boolean AS $BODY$
+    use strict;
+    use File::Temp qw(tempfile); 
+    
+    my ($blib, $lib, $src) = @_;
+    
+    if ($blib) {
+        require blib;
+        blib->import($blib);        
+    }
+    if ($lib) {
+        require lib;
+        lib->import($lib);
+    }
+
+    my ($fh, $filename) = tempfile();
+    print $fh $src;
+    close $fh;
+    
+    do $filename;
+    die $@ if $@;
+    
+    return 1;
+$BODY$ LANGUAGE plperlu;
